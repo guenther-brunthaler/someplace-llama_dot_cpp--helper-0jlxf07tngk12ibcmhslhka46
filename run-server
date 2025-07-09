@@ -27,11 +27,11 @@ shift `expr $OPTIND - 1 || :`
 host=`hostname`
 test "$host"
 
+test $# = 1
+test -f "$1"
+
 # Will be killed by ^C together with the script.
 socat TCP4-LISTEN:$listen_port,bind="$host",reuseaddr,fork \
 	TCP4:127.0.0.1:8080 & fwd_pid=$!
-
-test $# = 1
-test -f "$1"
 
 llama-server -m "$1"
