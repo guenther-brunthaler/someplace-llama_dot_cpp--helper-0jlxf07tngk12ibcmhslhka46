@@ -1,10 +1,20 @@
 #! /bin/sh
 
-# v2025.58
+# v2025.190
 listen_port=12345
 
 set -e
-trap 'test $? = 0 || echo "\"$0\" failed!" >& 2' 0
+cleanup() {
+	rc=$?
+	if test "$fwd_pid"
+	then
+		wait $fwd_pid || :
+	fi
+	test $rc = 0 || echo "\"$0\" failed!" >& 2
+}
+fwd_pid=
+trap cleanup 0
+trap 'exit $?' INT QUIT TERM HUP
 
 while getopts '' opt
 do
@@ -19,7 +29,7 @@ test "$host"
 
 # Will be killed by ^C together with the script.
 socat TCP4-LISTEN:$listen_port,bind="$host",reuseaddr,fork \
-	TCP4:127.0.0.1:8080 &
+	TCP4:127.0.0.1:8080 & fwd_pid=$!
 
 test $# = 1
 test -f "$1"
