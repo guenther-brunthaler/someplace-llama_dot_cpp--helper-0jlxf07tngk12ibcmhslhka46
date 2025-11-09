@@ -1,14 +1,17 @@
 #! /bin/sh
 
-# v2025.58
+# v2025.178
 listen_port=12345
+server_port=8080
 
 set -e
 trap 'test $? = 0 || echo "\"$0\" failed!" >& 2' 0
 
-while getopts '' opt
+while getopts P:p: opt
 do
 	case $opt in
+		p) listen_port=$OPTART;;
+		P) server_port=$OPTARG;;
 		*) false || exit
 	esac
 done
@@ -18,10 +21,10 @@ host=`hostname`
 test "$host"
 
 # Will be killed by ^C together with the script.
-socat TCP4-LISTEN:$listen_port,bind="$host",reuseaddr,fork \
-	TCP4:127.0.0.1:8080 &
+socat TCP4-LISTEN:"$listen_port",bind="$host",reuseaddr,fork \
+	TCP4:127.0.0.1:"$server_port" &
 
 test $# = 1
 test -f "$1"
 
-llama-server -m "$1"
+llama-server --port "$server_port" -m "$1"
