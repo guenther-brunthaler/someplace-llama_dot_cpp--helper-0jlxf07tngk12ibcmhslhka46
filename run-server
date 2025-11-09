@@ -1,7 +1,8 @@
 #! /bin/sh
 
-# v2025.190
+# v2025.313
 listen_port=12345
+server_port=8080
 
 set -e
 cleanup() {
@@ -16,9 +17,11 @@ fwd_pid=
 trap cleanup 0
 trap 'exit $?' INT QUIT TERM HUP
 
-while getopts '' opt
+while getopts P:p: opt
 do
 	case $opt in
+		p) listen_port=$OPTART;;
+		P) server_port=$OPTARG;;
 		*) false || exit
 	esac
 done
@@ -31,7 +34,7 @@ test $# = 1
 test -f "$1"
 
 # Will be killed by ^C together with the script.
-socat TCP4-LISTEN:$listen_port,bind="$host",reuseaddr,fork \
-	TCP4:127.0.0.1:8080 & fwd_pid=$!
+socat TCP4-LISTEN:"$listen_port",bind="$host",reuseaddr,fork \
+	TCP4:127.0.0.1:"$server_port" &
 
-llama-server -m "$1"
+llama-server --port "$server_port" -m "$1"

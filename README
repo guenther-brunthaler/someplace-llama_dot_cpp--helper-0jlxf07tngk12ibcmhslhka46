@@ -1,0 +1,34 @@
+llama.cpp helper
+================
+v2025.313
+
+This repository contains a few helper scripts and build advice 
+for "llama.cpp".
+
+Note that llama.cpp should be built from a git 
+checkout-directory, because the cmake configuration scripts 
+extract version information from the checkout.
+
+It is therefore recommended that an upstream git commit is 
+currently checked out and it is named by a tag (like "b6853").
+
+llama.cpp is a big project, so it is advised to use the ninja 
+backend of cmake for building it.
+
+$ ov=b5646 pn=llama.cpp pv=b6853 finaldest=$HOME/.local
+$ xzcat < "${p:?}"/CMakeCache.txt-"${ov:?}".xz > CMakeCache.txt-"${ov:?}"
+$ ionice -n6 nice cmake -G Ninja -B build \
+     -C CMakeCache.txt-"${ov:?}" \
+     -D CMAKE_BUILD_TYPE=Release \
+     -D CMAKE_INSTALL_PREFIX="${finaldest:?}"
+$ cd build
+$ pjobs=`nproc`; pjobs=`expr $pjobs + 1`
+$ ninja edit_cache
+$ xz -9ec < CMakeCache.txt > "${p:?}"/CMakeCache.txt-"${pv:?}".xz
+$ ionice -n6 nice cmake --build . -- -j${pjobs:?} -l${pjobs:?}
+$ ionice -n6 nice cmake --install . \
+     --prefix "stage/${pn:?}-${pv:?}/${finaldest:?}"
+$ cd stage
+$ package-manager-for-the-poor -r "${pn:?}-${ov:?}"
+$ package-manager-for-the-poor -i "${pn:?}-${pv:?}"
+$ cd ..
