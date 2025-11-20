@@ -1,6 +1,6 @@
 llama.cpp helper
 ================
-v2025.313
+v2025.324
 
 This repository contains a few helper scripts and build advice 
 for "llama.cpp".
@@ -15,20 +15,49 @@ currently checked out and it is named by a tag (like "b6853").
 llama.cpp is a big project, so it is advised to use the ninja 
 backend of cmake for building it.
 
-$ ov=b5646 pn=llama.cpp pv=b6853 finaldest=$HOME/.local
+One-time initialization:
+
+$ git config set --local \
+    url.https://github.com/guenther-brunthaler/.insteadof \
+    tag:xworld.mine.nu,2009:
+$ git clone --depth=1 -q tag:xworld.mine.nu,2009:usr-loc`:
+    `al-bin-xworld-jv3gwuidf2ezyr5vbqavqtxyh.git helpers
+$ sudo apt-get install g++ make cpuinfo ninja-build xz
+$ git clone --bare --depth=1 -q https://github.com/ggerganov/llama.cpp.git
+
+Every time a new version is built:
+
+$ cd llama.cpp.git
+$ git fetch --tags --depth=1 -q
+$ cd ..
+$ export PATH=$PWD/helpers:$PATH
+$ tmpdir-shell # Exports $p as the original directory.
+$ pn=llama.cpp finaldest=$HOME/.local
+$ git clone -q -s "${p:?}"/"${pn:?}".git
+$ cd -- "${pn:?}"
+$ package-manager-for-the-poor -l | grep -- "${pn:?}"-
+$ # Find old version number from the above output and set it in next line.
+$ ov=b5646
+$ pv=`git tag | grep -E '^b[0-9]+$' | sort -n | tail -n 1`; echo $pv
 $ xzcat < "${p:?}"/CMakeCache.txt-"${ov:?}".xz > CMakeCache.txt-"${ov:?}"
-$ ionice -n6 nice cmake -G Ninja -B build \
+$ cmake -G Ninja -B build \
      -C CMakeCache.txt-"${ov:?}" \
      -D CMAKE_BUILD_TYPE=Release \
      -D CMAKE_INSTALL_PREFIX="${finaldest:?}"
 $ cd build
 $ pjobs=`nproc`; pjobs=`expr $pjobs + 1`
+$ isa-info | grep yes # Show your CPU's capabilities for next step
 $ ninja edit_cache
 $ xz -9ec < CMakeCache.txt > "${p:?}"/CMakeCache.txt-"${pv:?}".xz
 $ ionice -n6 nice cmake --build . -- -j${pjobs:?} -l${pjobs:?}
-$ ionice -n6 nice cmake --install . \
+$ cmake --install . \
      --prefix "stage/${pn:?}-${pv:?}/${finaldest:?}"
+$ "${p:?}"/clean-stage.sh # Remove files unnecessary at runtime.
 $ cd stage
 $ package-manager-for-the-poor -r "${pn:?}-${ov:?}"
 $ package-manager-for-the-poor -i "${pn:?}-${pv:?}"
 $ cd ..
+$ exit # Leave and destroy temporary "tmpdir-shell" environment
+
+$ov is the last version built. For the first build, set it to anything and
+remove all lines referencing that variable from the above instructions.
